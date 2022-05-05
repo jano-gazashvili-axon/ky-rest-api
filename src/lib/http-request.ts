@@ -4,7 +4,6 @@ import { createBody } from "./create-body";
 import { Mixed, TypeOf } from "io-ts";
 import { handleStatus } from "./status-handler";
 
-export type Codec<T extends Mixed> = T
 export type RestMethod =
   | "DELETE"
   | "GET"
@@ -39,42 +38,34 @@ const createHook = <T extends Mixed>(codec: T, type?: "json" | "file") => ({
   },
 });
 
-
 //if endpoint has prefix url ex: /api
-const prefixUrl = ""
+const prefixUrl = "";
 
 //in real situation we have 1, i just used it because of different endpoint for files
 
-const fileUri = 'https://ky-test-app.herokuapp.com/api'
-const baseUri = 'https://fakestoreapi.com'
+const fileUri = "https://ky-test-app.herokuapp.com/api";
+const baseUri = "https://fakestoreapi.com";
 
 const request =
   (method: RestMethod) =>
-  (
-    httpUrl: string,
-    body?: RequestBody,
-    init?: RequestInit,
-  ) => ({
+  (httpUrl: string, body?: RequestBody, init?: RequestInit) => ({
     decode: <T extends Mixed>(codec: T) => {
-
-      const goHttp = async (codec: Mixed, type: 'file'| 'json') => {
-        const json = await ky(`${type === 'file' ? fileUri : baseUri}${httpUrl}`, {
+      const goHttp = async (codec: Mixed, type: "file" | "json") =>
+        await ky(`${type === "file" ? fileUri : baseUri}${httpUrl}`, {
           ...createBody(method, body, type),
           ...createHook(codec, type),
           ...init,
           prefixUrl,
-        }).json() as TypeOf<typeof codec>
-        return json
-      }
+        }).json();
 
       return {
-        json: async () => goHttp(codec, 'json') as TypeOf<typeof codec>,
-        file: async () => goHttp(codec, 'file') as TypeOf<typeof codec>
+        json: async () => goHttp(codec, "json") as TypeOf<typeof codec>,
+        file: async () => goHttp(codec, "file") as TypeOf<typeof codec>,
 
         //with blob work in progress
-      }
-    }
-  })
+      };
+    },
+  });
 
 export const get = request("GET");
 export const post = request("POST");
