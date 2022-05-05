@@ -1,18 +1,19 @@
-import { RequestBody, RestMethod } from "./http-request";
+import { RequestBody, RequestType, RestMethod } from "./http-request";
 
 export const createBody = (
   method: RestMethod,
   body?: RequestBody,
-  type?: 'json' | 'file'
+  type?: RequestType
 ) => {
-  if (method === "GET") return {method}
+  if (method === "GET") return { method };
 
-  if(body === undefined) return {method}
+  if (body === undefined) return { method };
 
-  if(type === 'json') return {
-    body: JSON.stringify(body) as BodyInit,
-    method,
-  };
+  if (type === "json" || type === "blob")
+    return {
+      body: JSON.stringify(body) as BodyInit,
+      method,
+    };
 
   const formData = new FormData();
 

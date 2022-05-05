@@ -12,11 +12,12 @@ export type RestMethod =
   | "POST"
   | "PUT";
 
+export type RequestType = "json" | "file" | "blob";
 export type RequestBody = Record<string, any>;
 
 const globalAccessToken = "token";
 
-const createHook = <T extends Mixed>(codec: T, type?: "json" | "file") => ({
+const createHook = <T extends Mixed>(codec: T, type?: RequestType) => ({
   hooks: {
     beforeRequest: [
       (request: Request) => {
@@ -49,27 +50,23 @@ const baseUri = "https://fakestoreapi.com";
 const request =
   (method: RestMethod) =>
   (httpUrl: string, body?: RequestBody, init?: RequestInit) => {
-    const goHttp = (codec: Mixed, type: "file" | "json" | "blob") => {
-      const isFileOrJson = type === "file" || type === "json";
+    const goHttp = (codec: Mixed, type: RequestType) => {
+      //it will be removed when API will be one
       const isFileOrBlob = type === "file" || type === "blob";
 
       return ky(`${isFileOrBlob ? fileUri : baseUri}${httpUrl}`, {
-        ...(isFileOrJson && createBody(method, body, type)),
-        ...(isFileOrJson ? createHook(codec, type) : createHook(codec)),
+        ...createBody(method, body, type),
+        ...createHook(codec, type),
         ...init,
         prefixUrl,
       });
     };
     return {
-      decode: <T extends Mixed>(codec: T) => {
-        return {
-          json: async () =>
-            goHttp(codec, "json").json() as TypeOf<typeof codec>,
-          file: async () =>
-            goHttp(codec, "file").json() as TypeOf<typeof codec>,
-        };
-      },
-      blob: async () => goHttp(nil, "blob").blob(),
+      decode: <T extends Mixed>(codec: T) => ({
+        json: async () => goHttp(codec, "json").json() as TypeOf<typeof codec>,
+        file: async () => goHttp(codec, "file").json() as TypeOf<typeof codec>,
+      }),
+      blob: () => goHttp(nil, "blob").blob(),
     };
   };
 
