@@ -44,12 +44,14 @@ export const handleStatus = async <T extends Mixed>(
         throw error;
       }
     }
-    if (isLeft(codec.decode(await response.json())))
-      throw requestError({
-        json: response,
-        message: "Failed to decode",
-        type: "decode_body",
-      });
+    if (codec.name !== "null") {
+      if (isLeft(codec.decode(await response.json())))
+        throw requestError({
+          json: response,
+          message: "Failed to decode",
+          type: "decode_body",
+        });
+    }
   } catch (error) {
     if (isRequestError(error)) {
       throw error;

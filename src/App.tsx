@@ -4,6 +4,7 @@ import { del, get, post } from "./lib/http-request";
 import { useMutation, useQuery } from "react-query";
 import * as t from "io-ts";
 import { concatQueryParams } from "./lib/concat-query-params";
+import { saveAs } from "file-saver";
 
 const TProduct = t.type({
   id: t.number,
@@ -61,16 +62,17 @@ const deleteProduct = (productId: string) =>
     .decode(TBasicResponse)
     .json();
 
+const getBlob = () => get(`/blob`).blob();
+
 function App() {
   const productId = "5";
 
-  const $products = useQuery("products", getProducts, { retry: false });
-  const $product = useQuery(
-    `product.${productId}`,
-    () => getProduct(productId),
-    { retry: false }
+  const $products = useQuery("products", getProducts);
+  const $product = useQuery(`product.${productId}`, () =>
+    getProduct(productId)
   );
 
+  const $downloadBlob = useMutation(getBlob);
   const $fileUploadFormData = useMutation(uploadFile);
 
   // just for testing http request for form data
@@ -88,7 +90,17 @@ function App() {
     <div className="App">
       <header className="App-header">
         <input type="file" onChange={handleImageChange} accept="image/*" />
-        <p>React - Test ky request</p>
+
+        <button
+          onClick={() =>
+            $downloadBlob.mutate(undefined, {
+              onSuccess: (blob) => saveAs(blob, "blob.your_format"),
+            })
+          }
+        >
+          download blob
+        </button>
+        <p>React - Testing ky HTTP request</p>
         {$product.isLoading || $products.isLoading ? (
           <p>loading ...</p>
         ) : (

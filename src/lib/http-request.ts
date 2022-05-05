@@ -1,7 +1,7 @@
 import ky from "ky";
 import { NormalizedOptions } from "ky/distribution/types/options";
 import { createBody } from "./create-body";
-import { Mixed, TypeOf } from "io-ts";
+import { Mixed, TypeOf, null as nil } from "io-ts";
 import { handleStatus } from "./status-handler";
 
 export type RestMethod =
@@ -48,24 +48,30 @@ const baseUri = "https://fakestoreapi.com";
 
 const request =
   (method: RestMethod) =>
-  (httpUrl: string, body?: RequestBody, init?: RequestInit) => ({
-    decode: <T extends Mixed>(codec: T) => {
-      const goHttp = async (codec: Mixed, type: "file" | "json") =>
-        await ky(`${type === "file" ? fileUri : baseUri}${httpUrl}`, {
-          ...createBody(method, body, type),
-          ...createHook(codec, type),
-          ...init,
-          prefixUrl,
-        }).json();
+  (httpUrl: string, body?: RequestBody, init?: RequestInit) => {
+    const goHttp = (codec: Mixed, type: "file" | "json" | "blob") => {
+      const isFileOrJson = type === "file" || type === "json";
+      const isFileOrBlob = type === "file" || type === "blob";
 
-      return {
-        json: async () => goHttp(codec, "json") as TypeOf<typeof codec>,
-        file: async () => goHttp(codec, "file") as TypeOf<typeof codec>,
-
-        //with blob work in progress
-      };
-    },
-  });
+      return ky(`${isFileOrBlob ? fileUri : baseUri}${httpUrl}`, {
+        ...(isFileOrJson && createBody(method, body, type)),
+        ...(isFileOrJson ? createHook(codec, type) : createHook(codec)),
+        ...init,
+        prefixUrl,
+      });
+    };
+    return {
+      decode: <T extends Mixed>(codec: T) => {
+        return {
+          json: async () =>
+            goHttp(codec, "json").json() as TypeOf<typeof codec>,
+          file: async () =>
+            goHttp(codec, "file").json() as TypeOf<typeof codec>,
+        };
+      },
+      blob: async () => goHttp(nil, "blob").blob(),
+    };
+  };
 
 export const get = request("GET");
 export const post = request("POST");
