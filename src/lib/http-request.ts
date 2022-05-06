@@ -27,6 +27,9 @@ const createHook = <T extends Mixed>(codec: T, type?: RequestType) => ({
         if (type === "json") {
           request.headers.set("Content-Type", "application/json");
         }
+        if (type === "blob") {
+          request.headers.set("responseType", "blob");
+        }
       },
     ],
     afterResponse: [
