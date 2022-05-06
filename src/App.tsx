@@ -31,6 +31,31 @@ const TBasicResponse = t.type({
   message: t.string,
 });
 
+//BEFORE ky http request
+
+// export const uploadFileWithOldRequest = async (input: UploadBackground) => {
+//   return pipe(
+//     await post("api/files", {
+//       body: {
+//         file: input.file,
+//       },
+//       query: new URLSearchParams({ type: input.type }),
+//       type: "file",
+//     }),
+//     decodeJson(TBasicResponse)
+//   );
+// };
+
+//AFTER
+
+// const uploadFileWithNewRequest = (file: File | string, type: string) => {
+//   return post(concatQueryParams("api/files", new URLSearchParams({ type })), {
+//     file,
+//   })
+//     .decode(TBasicResponse)
+//     .file();
+// };
+
 const uploadFile = (image: File) =>
   post("/upload", {
     image,
@@ -94,7 +119,7 @@ function App() {
         <button
           onClick={() =>
             $downloadBlob.mutate(undefined, {
-              onSuccess: (blob) => saveAs(blob, "blob.your_format"),
+              onSuccess: (blob) => saveAs(blob, "blob.xlsx"),
             })
           }
         >
